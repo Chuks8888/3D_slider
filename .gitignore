@@ -1,1 +1,3 @@
 slider/
+*.nii.gz
+data/*.json
