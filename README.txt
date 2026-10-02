@@ -1,0 +1,61 @@
+```markdown
+# 3D CT Inference Engine
+
+A lightweight, memory-bounded sliding-window inference pipeline for volumetric Computed Tomography (CT) scans under strict GPU VRAM constraints (< 4 GB).
+
+## Features
+
+- **Memory-Bounded 3D Inference:** Processes dense volumes in sub-patches without triggering CUDA OOMs.
+- **Gaussian-Weighted Stitching:** Suppresses hard boundary seams during patch reassembly.
+- **DICOM & NIfTI Ready:** Converts raw DICOM series (via `dcm2niix`) or accepts standardized `.nii.gz`.
+- **Pre-calibrated Preprocessing:** Automated Hounsfield Unit (HU) window clipping and isotropic spline resampling.
+
+## Quickstart
+
+### Docker (Recommended)
+
+```bash
+# Build
+docker build -t ct-inference -f docker/Dockerfile .
+
+# Run inference
+docker run --gpus all --rm -v $(pwd)/data:/data ct-inference \
+  --input /data/scan.nii.gz \
+  --output /data/mask.nii.gz \
+  --patch-size 96 96 96 \
+  --overlap 0.5 \
+  --profile
+
+```
+
+### Local Setup
+
+```bash
+pip install -r requirements.txt
+
+python -m src.cli \
+  --input ./data/scan.nii.gz \
+  --output ./data/mask.nii.gz \
+  --patch-size 96 96 96
+
+```
+
+## CLI Reference
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--input` | *Required* | Path to `.nii.gz` file or DICOM series directory |
+| `--output` | *Required* | Output path for predicted 3D segmentation mask |
+| `--patch-size` | `96 96 96` | 3D window dimensions ($D \times H \times W$) |
+| `--overlap` | `0.5` | Fractional overlap between adjacent patches ($0.0$–$0.75$) |
+| `--profile` | `False` | Exports VRAM usage and execution latency to JSON |
+
+## License
+
+MIT
+
+```
+
+<FollowUp label="Want the minimal Dockerfile to match this setup?" query="Write the minimal Dockerfile for this CT inference engine with CUDA and PyTorch."/>
+
+```
