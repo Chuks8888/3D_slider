@@ -1,4 +1,3 @@
-```markdown
 # 3D CT Inference Engine
 
 A lightweight, memory-bounded sliding-window inference pipeline for volumetric Computed Tomography (CT) scans under strict GPU VRAM constraints (< 4 GB).
@@ -57,5 +56,3 @@ MIT
 ```
 
 <FollowUp label="Want the minimal Dockerfile to match this setup?" query="Write the minimal Dockerfile for this CT inference engine with CUDA and PyTorch."/>
-
-```
