@@ -1,4 +1,4 @@
-# 3D CT Inference Engine
+# 3D CT Inference Engine (WORK IN PROGRESS)
 
 A lightweight, memory-bounded sliding-window inference pipeline for volumetric Computed Tomography (CT) scans under strict GPU VRAM constraints (< 4 GB).
 

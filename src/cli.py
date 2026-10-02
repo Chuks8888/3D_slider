@@ -5,10 +5,10 @@ from pathlib import Path
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Niigz Images Loading Tool')
-    parser.add_argument('-s', '--source', type=str, required=True)
+    parser.add_argument('-i', '--input', type=str, required=True)
     args = parser.parse_args()
 
-    target_directory = args.source
+    target_directory = args.input
     if not target_directory or not Path(target_directory).is_dir():
         parser.error("Need to provide the source directory")
     target_directory = Path(target_directory)
