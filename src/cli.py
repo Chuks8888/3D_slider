@@ -3,6 +3,13 @@ import SimpleITK as sitk
 import argparse
 from pathlib import Path
 
+def form(data, unit="", decimal=3):
+    res = ""
+    if data.any():
+        res = ' x '.join(str(round(element, decimal)) + unit for element in data)
+
+    return res
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Niigz Images Loading Tool')
     parser.add_argument('-i', '--input', type=str, required=True)
@@ -14,15 +21,25 @@ if __name__ == '__main__':
     target_directory = Path(target_directory)
 
     for target in target_directory.glob('*.nii.gz'):
-        print (f"Opening file: {target}")
-
         image = sitk.ReadImage(target)
-        size = image.GetSize()
-        size = ' x '.join(str(element) for element in size)
-        print(f"Size of the image: {size}")
-        print(f"Spacing of the image: {image.GetSpacing()}")
 
-        array = sitk.GetArrayFromImage(image)
-        print(f"Hounsfield values: {array.min()} & {array.max()}")
+        size = np.array(image.GetSize())
+        spacing = np.array(image.GetSpacing())
+        physical_size = size * spacing
+
+        target_spacing = np.ones_like(physical_size)
+        target_size = np.floor(physical_size / target_spacing).astype(int)
+
+        view = sitk.GetArrayFromImage(image)
+        del image
+
+        print(f"File: {target.name}")
+        print(f"Size of the image:      {form(size)}")
+        print(f"Spacing of the image:   {form(spacing, "mm")}")
+        print(f"Real Size of the image: {form(physical_size, "mm")}")
+        print(f"HU range:               {view.min()} & {view.max()}\n")
+
+        print(f"Target Spacing:         {form(target_spacing, "mm")}")  
+        print(f"Target Size:            {form(target_size)}")
 
         print('\n')

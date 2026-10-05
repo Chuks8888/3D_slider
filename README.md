@@ -23,6 +23,7 @@ docker run --gpus all --rm -v $(pwd)/data:/data ct-inference \
   --output /data/mask.nii.gz \
   --patch-size 96 96 96 \
   --overlap 0.5 \
+  --hu-window -1000 4000 \
   --profile
 
 ```
@@ -54,5 +55,3 @@ python -m src.cli \
 MIT
 
 ```
-
-<FollowUp label="Want the minimal Dockerfile to match this setup?" query="Write the minimal Dockerfile for this CT inference engine with CUDA and PyTorch."/>
