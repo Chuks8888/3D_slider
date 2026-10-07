@@ -1,5 +1,7 @@
 import argparse
 import time
+import uuid
+from datetime import datetime
 
 import numpy as np
 import SimpleITK as sitk
@@ -39,20 +41,32 @@ if __name__ == '__main__':
     #Filepaths
     target_directory = Path(target_directory)
     output_directory = Path(output_directory)
+    
+    #Process related variables
+    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_output_directory = output_directory / run_id
 
     # Processing Loop
     for target in target_directory.glob('*.nii.gz'):
         if not target:
             continue
 
+        print(f"File: {target.name}")
         image = sitk.ReadImage(target)
-        view = sitk.GetArrayViewFromImage(image)
+        
+        if image.GetDimension() != 3:
+            print("Skipping: Not a 3D image\n")
+            continue
 
         size = np.array(image.GetSize())
+        if size[2] <= 5:
+            print("Skipping: Insufficient slices along Z-axis\n")
+            continue
+
+        view = sitk.GetArrayViewFromImage(image)
         spacing = np.array(image.GetSpacing())
         physical_size = size * spacing
 
-        print(f"File: {target.name}")
         print(f"Size of the image:      {form(size)}")
         print(f"Spacing of the image:   {form(spacing, 'mm')}")
         print(f"Real Size of the image: {form(physical_size, 'mm')}")
@@ -92,13 +106,10 @@ if __name__ == '__main__':
         assert np.allclose(final_spacing.tolist(), target_spacing.tolist()), "Spacing mistmatch!"
         assert np.allclose(final_size.tolist(), target_size.tolist()), "Size mistmatch!"
 
-        print(f"\nResampled Size:   {form(final_size)}")
-        print(f"Resampled Spacing:{form(final_spacing, 'mm')}")
-        print(f"Clamped HU Range: {view.min()} to {view.max()}")
-        print(f"Execution time:   {duration:.2f}s")
+        print(f"\nResampled Size:       {form(final_size)}")
+        print(f"Resampled Spacing:      {form(final_spacing, 'mm')}")
+        print(f"Fianl HU Range:         {view.min()} to {view.max()}")
+        print(f"Execution time:         {duration:.2f}s")
 
-        output_path = output_directory / target.name
-        sitk.WriteImage(final_image, output_path)
-
-        print('\n')
-        break
+        output_path = unique_output_directory / target.name
+        sitk.WriteImage(final_image, str(output_path))
