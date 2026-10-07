@@ -1,6 +1,8 @@
+import argparse
+import time
+
 import numpy as np
 import SimpleITK as sitk
-import argparse
 from pathlib import Path
 
 def form(data, unit="", decimal=3):
@@ -16,10 +18,10 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', type=str, required=True)
     args = parser.parse_args()
 
+    # Argument Parsing
     target_directory = args.input
     if not target_directory or not Path(target_directory).is_dir():
         parser.error("Need to provide the source directory")
-    target_directory = Path(target_directory)
 
     output_directory = args.output
     if not output_directory or not Path(output_directory).is_dir():
@@ -29,29 +31,74 @@ if __name__ == '__main__':
             parser.error("The output needs to be a directory")
         except:
             parser.error("Failed to create the output directory")
-    else:
-        parser.error("Need to provide the output directory")
 
+    #HU Bounds
+    hu_lower = -1024.0
+    hu_upper = 3071.0
+
+    #Filepaths
+    target_directory = Path(target_directory)
+    output_directory = Path(output_directory)
+
+    # Processing Loop
     for target in target_directory.glob('*.nii.gz'):
+        if not target:
+            continue
+
         image = sitk.ReadImage(target)
+        view = sitk.GetArrayViewFromImage(image)
 
         size = np.array(image.GetSize())
         spacing = np.array(image.GetSpacing())
         physical_size = size * spacing
 
-        target_spacing = np.ones_like(physical_size)
-        target_size = np.floor(physical_size / target_spacing).astype(int)
-
-        view = sitk.GetArrayFromImage(image)
-        del image
-
         print(f"File: {target.name}")
         print(f"Size of the image:      {form(size)}")
-        print(f"Spacing of the image:   {form(spacing, "mm")}")
-        print(f"Real Size of the image: {form(physical_size, "mm")}")
+        print(f"Spacing of the image:   {form(spacing, 'mm')}")
+        print(f"Real Size of the image: {form(physical_size, 'mm')}")
         print(f"HU range:               {view.min()} & {view.max()}\n")
 
-        print(f"Target Spacing:         {form(target_spacing, "mm")}")  
+        target_spacing = np.ones_like(physical_size)
+        target_size = np.round(physical_size / target_spacing).astype(int)
+
+        print(f"Target Spacing:         {form(target_spacing, 'mm')}")  
         print(f"Target Size:            {form(target_size)}")
 
+        R = sitk.ResampleImageFilter()
+        R.SetInterpolator(sitk.sitkBSpline)
+
+        R.SetSize(target_size.tolist())
+        R.SetOutputSpacing(target_spacing.tolist())
+        R.SetOutputOrigin(image.GetOrigin())
+        R.SetOutputDirection(image.GetDirection())
+        R.SetDefaultPixelValue(hu_lower)
+
+        t0 = time.perf_counter()
+
+        resampled_float = R.Execute(image)
+        resampled_image = sitk.Clamp(
+            resampled_float,
+            sitk.sitkFloat32,
+            lowerBound=hu_lower,
+            upperBound=hu_upper
+        )
+        final_image = sitk.Cast(resampled_image, sitk.sitkInt16)
+        
+        duration = time.perf_counter() - t0
+        final_spacing = np.array(final_image.GetSpacing())
+        final_size = np.array(final_image.GetSize())
+        view = sitk.GetArrayViewFromImage(final_image)
+
+        assert np.allclose(final_spacing.tolist(), target_spacing.tolist()), "Spacing mistmatch!"
+        assert np.allclose(final_size.tolist(), target_size.tolist()), "Size mistmatch!"
+
+        print(f"\nResampled Size:   {form(final_size)}")
+        print(f"Resampled Spacing:{form(final_spacing, 'mm')}")
+        print(f"Clamped HU Range: {view.min()} to {view.max()}")
+        print(f"Execution time:   {duration:.2f}s")
+
+        output_path = output_directory / target.name
+        sitk.WriteImage(final_image, output_path)
+
         print('\n')
+        break
