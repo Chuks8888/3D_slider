@@ -14,17 +14,7 @@ A lightweight, memory-bounded sliding-window inference pipeline for volumetric C
 ### Docker (Recommended)
 
 ```bash
-# Build
-docker build -t ct-inference -f docker/Dockerfile .
-
-# Run inference
-docker run --gpus all --rm -v $(pwd)/data:/data ct-inference \
-  --input /data/scan.nii.gz \
-  --output /data/mask.nii.gz \
-  --patch-size 96 96 96 \
-  --overlap 0.5 \
-  --hu-window -1000 4000 \
-  --profile
+# Work in progress
 
 ```
 
@@ -42,16 +32,16 @@ python -m src.cli \
 
 ## CLI Reference
 
-| Flag | Default | Description |
-| --- | --- | --- |
-| `--input` | *Required* | Path to `.nii.gz` file or DICOM series directory |
-| `--output` | *Required* | Output path for predicted 3D segmentation mask |
-| `--patch-size` | `96 96 96` | 3D window dimensions ($D \times H \times W$) |
-| `--overlap` | `0.5` | Fractional overlap between adjacent patches ($0.0$–$0.75$) |
-| `--profile` | `False` | Exports VRAM usage and execution latency to JSON |
+| Flag           | Default    | Description                                                |
+| -------------- | ---------- | ---------------------------------------------------------- |
+| `--input`      | _Required_ | Path to `.nii.gz` file or DICOM series directory           |
+| `--output`     | _Required_ | Output path for predicted 3D segmentation mask             |
+| `--patch-size` | `96 96 96` | 3D window dimensions ($D \times H \times W$)               |
+| `--overlap`    | `0.5`      | Fractional overlap between adjacent patches ($0.0$–$0.75$) |
+| `--profile`    | `False`    | Exports VRAM usage and execution latency to JSON           |
+| `--verbose`    | `False`    | Prints the logs to the standard output                     |
+| `--recursive`  | `False`    | Searches for the target data recursively                   |
 
 ## License
 
-MIT
-
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
