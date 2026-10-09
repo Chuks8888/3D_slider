@@ -1,5 +1,6 @@
 import argparse
 import sys
+import torch
 
 import numpy as np
 import SimpleITK as sitk
@@ -36,9 +37,9 @@ if __name__ == "__main__":
     target_directory = Path(target_directory)
     output_directory = Path(output_directory)
 
+    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     if not args.skip_preprocess:
-        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_output_directory = output_directory / run_id
+        unique_output_directory = output_directory / "preprocessing_" / run_id
         unique_output_directory.mkdir()
 
         pattern = "*.nii.gz"
@@ -66,9 +67,19 @@ if __name__ == "__main__":
     dataset = MedicalDataset(dataset_dir)
 
     if len(dataset) > 0:
-        logger = pre.getLogger(output_directory=dataset_dir, stdout=args.verbose)
+        unique_output_directory = output_directory / "slider_" / run_id
+        unique_output_directory.mkdir()
+
+        logger = pre.getLogger(
+            output_directory=unique_output_directory,
+            log_filename="engine.log",
+            stdout=args.verbose,
+        )
         first_tensor = dataset[0]
         logger.info(f"Loaded tensor shape: {first_tensor.shape}")
         logger.info(f"Tensor dtype: {first_tensor.dtype}")
+        logger.info(
+            f"Tensor range: {torch.min(first_tensor)} - {torch.max(first_tensor)}"
+        )
     else:
         sys.exit("Error: No *.nii.gz files were found in input")
