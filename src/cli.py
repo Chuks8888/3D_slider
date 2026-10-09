@@ -3,24 +3,26 @@ import sys
 
 import numpy as np
 import SimpleITK as sitk
+import preprocess_m as pre
 
 from pathlib import Path
 from datetime import datetime
-from preprocess_m import preprocess
+from dataset_m import MedicalDataset
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Niigz Images Loading Tool')
-    parser.add_argument('-i', '--input', type=str, required=True)
-    parser.add_argument('-o', '--output', type=str, required=True)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Niigz Images Loading Tool")
+    parser.add_argument("-i", "--input", type=str, required=True)
+    parser.add_argument("-o", "--output", type=str, required=True)
 
-    # Flags
-    parser.add_argument('-v', '--verbose', action='store_true', default=False)
-    parser.add_argument('-r', '--recursive', action='store_true', default=False)
+    parser.add_argument("-v", "--verbose", action="store_true", default=False)
+    parser.add_argument("-r", "--recursive", action="store_true", default=False)
+    parser.add_argument("--skip-preprocess", action="store_true", default=False)
+
     args = parser.parse_args()
 
     target_directory = args.input
     if not target_directory or not Path(target_directory).is_dir():
-        parser.error("Need to provide the source directory")
+        parser.error(f"Source directory {target_directory} does not exist")
 
     output_directory = args.output
     if not output_directory or not Path(output_directory).is_dir():
@@ -34,14 +36,39 @@ if __name__ == '__main__':
     target_directory = Path(target_directory)
     output_directory = Path(output_directory)
 
-    run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    unique_output_directory = output_directory / run_id
+    if not args.skip_preprocess:
+        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_output_directory = output_directory / run_id
+        unique_output_directory.mkdir()
 
-    pattern = '*.nii.gz'
-    files = list(target_directory.rglob(pattern) if args.recursive else target_directory.glob(pattern))
+        pattern = "*.nii.gz"
+        files = sorted(
+            list(
+                target_directory.rglob(pattern)
+                if args.recursive
+                else target_directory.glob(pattern)
+            )
+        )
 
-    if not files:
-        sys.exit(f"Error: No {pattern} files were found")
+        if not files:
+            sys.exit("Error: No *.nii.gz files were found in input")
 
-    for target in files:
-        preprocess(target, unique_output_directory, args.verbose)
+        for target in files:
+            pre.preprocess(target, unique_output_directory, args.verbose)
+
+        dataset_dir = unique_output_directory
+
+        logger = pre.getLogger(output_directory=dataset_dir, stdout=args.verbose)
+        logger.info("=== BATCH_PROCESSING_COMPLETE ===\n")
+    else:
+        dataset_dir = target_directory
+
+    dataset = MedicalDataset(dataset_dir)
+
+    if len(dataset) > 0:
+        logger = pre.getLogger(output_directory=dataset_dir, stdout=args.verbose)
+        first_tensor = dataset[0]
+        logger.info(f"Loaded tensor shape: {first_tensor.shape}")
+        logger.info(f"Tensor dtype: {first_tensor.dtype}")
+    else:
+        sys.exit("Error: No *.nii.gz files were found in input")

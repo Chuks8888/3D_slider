@@ -8,7 +8,12 @@ from pathlib import Path
 HU_LOWER = -1024.0
 HU_UPPER = 3071.0
 
-def getLogger(output_directory: Path, log_filename: str = "preprocessing.log", stdout: bool = False) -> logging.Logger:
+
+def getLogger(
+    output_directory: Path,
+    log_filename: str = "preprocessing.log",
+    stdout: bool = False,
+) -> logging.Logger:
     logger = logging.getLogger("sitk_preprocessor")
     logger.setLevel(logging.INFO)
 
@@ -20,20 +25,28 @@ def getLogger(output_directory: Path, log_filename: str = "preprocessing.log", s
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    has_file_handler = any(isinstance(h, logging.FileHandler) and Path(h.baseFilename) == log_path for h in logger.handlers)
+    has_file_handler = any(
+        isinstance(h, logging.FileHandler) and Path(h.baseFilename) == log_path
+        for h in logger.handlers
+    )
     if not has_file_handler:
         file_handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
     if stdout:
-        has_stream_handler = any(isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler) for h in logger.handlers)
+        has_stream_handler = any(
+            isinstance(h, logging.StreamHandler)
+            and not isinstance(h, logging.FileHandler)
+            for h in logger.handlers
+        )
         if not has_stream_handler:
             console_header = logging.StreamHandler()
             console_header.setFormatter(formatter)
             logger.addHandler(console_header)
 
     return logger
+
 
 def form(data, unit="", decimal=3):
     res = ""
@@ -47,8 +60,8 @@ def preprocess(target: Path, output_directory: Path, verbose: bool = False) -> b
     logger = getLogger(output_directory=output_directory, stdout=verbose)
 
     if not target.is_file():
-            logger.warning("Skipping %s: Not a valid file\n", target.name)
-            return False
+        logger.warning("Skipping %s: Not a valid file\n", target.name)
+        return False
     else:
         logger.info("Processing file:   %s", target.name)
 
@@ -64,7 +77,11 @@ def preprocess(target: Path, output_directory: Path, verbose: bool = False) -> b
 
     size = np.array(image.GetSize())
     if size[2] <= 5:
-        logger.warning("Skipping file %s: Insufficient slices along Z-axis (only %d slice/s)\n", target.name, size[2])
+        logger.warning(
+            "Skipping file %s: Insufficient slices along Z-axis (only %d slice/s)\n",
+            target.name,
+            size[2],
+        )
         return False
 
     view = sitk.GetArrayViewFromImage(image)
