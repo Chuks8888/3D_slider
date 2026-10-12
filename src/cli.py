@@ -7,10 +7,10 @@ import SimpleITK as sitk
 
 from pathlib import Path
 from datetime import datetime
-from dataset_m import MedicalDataset
+from dataset_loader import MedicalDataset
 
 from utils import getLogger
-from preprocess_m import preprocess
+from preprocess_data import preprocess
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Niigz Images Loading Tool")
