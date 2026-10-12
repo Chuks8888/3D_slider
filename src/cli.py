@@ -4,11 +4,13 @@ import torch
 
 import numpy as np
 import SimpleITK as sitk
-import preprocess_m as pre
 
 from pathlib import Path
 from datetime import datetime
 from dataset_m import MedicalDataset
+
+from utils import getLogger
+from preprocess_m import preprocess
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Niigz Images Loading Tool")
@@ -39,8 +41,8 @@ if __name__ == "__main__":
 
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     if not args.skip_preprocess:
-        unique_output_directory = output_directory / "preprocessing_" / run_id
-        unique_output_directory.mkdir()
+        unique_output_directory = output_directory / "preprocessing" / run_id
+        unique_output_directory.mkdir(parents=True, exist_ok=True)
 
         pattern = "*.nii.gz"
         files = sorted(
@@ -55,11 +57,15 @@ if __name__ == "__main__":
             sys.exit("Error: No *.nii.gz files were found in input")
 
         for target in files:
-            pre.preprocess(target, unique_output_directory, args.verbose)
+            preprocess(target, unique_output_directory, args.verbose)
 
         dataset_dir = unique_output_directory
 
-        logger = pre.getLogger(output_directory=dataset_dir, stdout=args.verbose)
+        logger = getLogger(
+            output_directory=dataset_dir,
+            log_filename="preprocessing.log",
+            stdout=args.verbose,
+        )
         logger.info("=== BATCH_PROCESSING_COMPLETE ===\n")
     else:
         dataset_dir = target_directory
@@ -67,10 +73,10 @@ if __name__ == "__main__":
     dataset = MedicalDataset(dataset_dir)
 
     if len(dataset) > 0:
-        unique_output_directory = output_directory / "slider_" / run_id
-        unique_output_directory.mkdir()
+        unique_output_directory = output_directory / "slider" / run_id
+        unique_output_directory.mkdir(parents=True, exist_ok=True)
 
-        logger = pre.getLogger(
+        logger = getLogger(
             output_directory=unique_output_directory,
             log_filename="engine.log",
             stdout=args.verbose,
